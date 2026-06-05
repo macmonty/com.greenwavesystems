@@ -34,6 +34,33 @@
     }
   },
   {
+    "id": "zwave_3",
+    "type": "dropdown",
+    "value": "1",
+    "label": {
+      "en": "State after power failure",
+      "nl": "Status na stroomuitval"
+    },
+    "hint": {
+      "en": "The state each socket restores to after a power failure. Default: Previous state.",
+      "nl": "De status van elke toma na een stroomuitval. Standaard: Vorige status."
+    },
+    "values": [
+      {
+        "id": "0",
+        "label": { "en": "Always off", "nl": "Altijd uit" }
+      },
+      {
+        "id": "1",
+        "label": { "en": "Previous state", "nl": "Vorige status" }
+      },
+      {
+        "id": "2",
+        "label": { "en": "Always on", "nl": "Altijd aan" }
+      }
+    ]
+  },
+  {
     "id": "poll_interval_onoff",
     "type": "number",
     "attr": {
