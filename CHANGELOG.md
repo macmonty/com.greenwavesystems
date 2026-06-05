@@ -4,73 +4,78 @@
 
 ## v1.1.2 (2026-06-05)
 
-### Corrección de bug crítico — Enrutamiento de reportes de potencia (PowerNode 6)
+### Critical bug fix — Power consumption routing (PowerNode 6)
 
-#### Problema
-El firmware del GreenWave PowerNode 6 (NP240/NP242) tiene un bug conocido
-(`treatDestinationEndpointAsSource`): todos los reportes espontáneos de medida de potencia
-(METER_REPORT) se enviaban siempre desde el endpoint 1, independientemente de qué toma
-física había generado el consumo. Esto provocaba que **todo el consumo apareciera siempre
-en la Toma 1**, mientras las tomas 2-6 mostraban 0W aunque tuvieran carga conectada.
+#### Problem
+The GreenWave PowerNode 6 (NP240/NP242) firmware has a known bug
+(`treatDestinationEndpointAsSource`): all unsolicited power measurement reports
+(METER_REPORT) were always sent from endpoint 1, regardless of which physical socket
+generated the consumption. This caused **all power consumption to always appear on
+Socket 1**, while sockets 2–6 showed 0W even when loads were connected.
 
-#### Solución implementada
-Se implementó un mecanismo de **"poll on change"** en el root device:
+#### Solution
+A **"poll on change"** mechanism was implemented in the root device:
 
-1. El root device registra un listener en MultiChannelNode 1 para `METER_REPORT`.
-2. Cuando llega cualquier reporte espontáneo (cambio ≥ umbral configurado), el root device
-   llama a `_getCapabilityValue('measure_power', 'METER')` en cada sub-device (S1–S6).
-3. Cada sub-device envía su propio `METER_GET` al endpoint Z-Wave correcto y recibe la
-   respuesta individualizada.
-4. Resultado: consumo correcto por toma con latencia de ~1-2 segundos tras el cambio.
+1. The root device registers a listener on MultiChannelNode 1 for `METER_REPORT`.
+2. When any unsolicited report arrives (change ≥ configured threshold), the root device
+   calls `_getCapabilityValue('measure_power', 'METER')` on each sub-device (S1–S6).
+3. Each sub-device sends its own `METER_GET` to the correct Z-Wave endpoint and receives
+   its individual response.
+4. Result: accurate per-socket power readings with ~1–2 second latency after a change.
 
-#### Otros cambios
-- `getOnStart: true` en `measure_power` — los valores de potencia se leen al arrancar la app.
-- `defaultConfiguration` Param 0 corregido de 80% a **10%** — el dispositivo reporta al 10%
-  de variación de corriente por defecto al emparejar.
-- Eliminado `reportParserOverride` innecesario en sub-devices.
+#### Additional changes
+- `getOnStart: true` on `measure_power` — power values are read on app startup for all sockets.
+- `defaultConfiguration` Param 0 corrected from 80% to **10%** — device reports on 10%
+  current variation by default when paired.
+- `reportParser` added to sub-devices: forces 0W when socket is turned off, preventing
+  transient values appearing after switching off.
+- On turn-on: active `METER_GET` triggered after 1 second so power reading appears
+  immediately without waiting for the device's spontaneous report (~10s delay).
+- `poll_interval_measure` default set to 0 (disabled) — the poll-on-change mechanism
+  handles updates automatically.
 
 ---
 
 ## v1.1.1
 
-- Corrección de migración de capabilities entre root device y sub-devices.
-- Supresión de errores `TRANSMIT_COMPLETE_NO_ACK` (bug de firmware — el dispositivo ejecuta
-  el comando pero no siempre envía ACK Z-Wave).
-- `poll_interval_meter` por defecto: 300s (kWh).
+- Fixed capability migration between root device and sub-devices.
+- Suppressed `TRANSMIT_COMPLETE_NO_ACK` errors (firmware bug — device executes the
+  command but does not always send a Z-Wave ACK). No functional impact.
+- `poll_interval_meter` default: 300s (kWh energy counter).
 
 ---
 
 ## v1.1.0
 
-- Soporte multicanal para PowerNode 6: cada toma aparece como dispositivo independiente
-  en Homey con sus propias capacidades `onoff`, `measure_power` y `meter_power`.
-- Al apagar una toma, `measure_power` se fuerza a 0W inmediatamente.
+- Multi-channel support for PowerNode 6: each socket appears as an independent device
+  in Homey with its own `onoff`, `measure_power` and `meter_power` capabilities.
+- When a socket is turned off, `measure_power` is immediately forced to 0W.
 
 ---
 
-## Configuración recomendada por toma (parámetros avanzados)
+## Recommended device settings (advanced parameters)
 
-Aplica estos valores en **Ajustes del dispositivo → cada toma (S1–S6)** en Homey:
+Apply these values in **Device settings → each socket (S1–S6)** in Homey:
 
-| Parámetro | Valor recomendado | Descripción |
+| Parameter | Recommended value | Description |
 |-----------|-------------------|-------------|
-| **Power change for update** | **10 %** | Variación mínima de corriente para enviar un reporte espontáneo a Homey. Valores bajos dan más resolución pero más tráfico Z-Wave. Rango: 1–100%. |
-| **Keep alive time** | **255 min** | Minutos sin contacto antes de que el LED empiece a parpadear. 255 = prácticamente desactivado. |
-| **Poll interval on/off** | **0 s** (desactivado) | Polling del estado encendido/apagado. No necesario con reportes espontáneos. |
-| **Poll interval measure (W)** | **0 s** (desactivado) | Polling de potencia instantánea. No necesario — el mecanismo "poll on change" lo gestiona automáticamente. |
-| **Poll interval meter (kWh)** | **300 s** | Polling de energía acumulada cada 5 minutos. Recomendado para mantener el contador kWh actualizado. |
+| **Power change for update** | **10%** | Minimum current variation to send an unsolicited report to Homey. Lower values give faster updates but more Z-Wave traffic. Range: 1–100%. |
+| **Keep alive time** | **255 min** | Minutes without contact before the LED starts blinking. 255 = effectively disabled. |
+| **Poll interval on/off** | **0 s** (disabled) | On/off status polling. Not needed with unsolicited reports. |
+| **Poll interval measure (W)** | **0 s** (disabled) | Instantaneous power polling. Not needed — the poll-on-change mechanism handles updates automatically. |
+| **Poll interval meter (kWh)** | **300 s** | Energy accumulator polling every 5 minutes. Recommended to keep the kWh counter up to date. |
 
-> **Nota**: El parámetro "Power change for update" se envía al dispositivo Z-Wave
-> via `CONFIGURATION_SET`. Si el valor actual es 80% (configuración antigua), cámbialo
-> manualmente a 10% en los ajustes de cada toma en Homey.
+> **Note**: The "Power change for update" parameter is sent to the Z-Wave device via
+> `CONFIGURATION_SET`. If the current value is 80% (old default), change it manually
+> to 10% in each socket's settings in Homey.
 
 ---
 
-## Notas sobre el firmware GreenWave NP240/NP242 v4.27
+## GreenWave NP240/NP242 firmware v4.27 — known issues
 
-- **Bug `treatDestinationEndpointAsSource`**: todos los reportes espontáneos de medida
-  llegan al endpoint 1. Gestionado por el driver desde v1.1.2.
-- **Bug `TRANSMIT_COMPLETE_NO_ACK`**: el dispositivo ejecuta los comandos SET pero
-  ocasionalmente no envía ACK Z-Wave. El driver suprime estos errores desde v1.1.1.
-- El dispositivo tiene **tasa de error ~11%** en tx (NO_ACK), lo cual es normal para
-  este firmware. No indica saturación de red.
+- **`treatDestinationEndpointAsSource` bug**: all unsolicited power reports arrive at
+  endpoint 1. Handled by the driver since v1.1.2.
+- **`TRANSMIT_COMPLETE_NO_ACK` bug**: device executes SET commands but occasionally
+  does not send a Z-Wave ACK. Driver suppresses these errors since v1.1.1.
+- Device has a **~11% TX error rate** (NO_ACK), which is normal for this firmware.
+  It does not indicate Z-Wave network saturation.
