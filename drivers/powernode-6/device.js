@@ -10,26 +10,9 @@ class GreenwaveDevice extends ZwaveDevice {
     const isRootDevice = this.node.MultiChannelNodes && Object.keys(this.node.MultiChannelNodes).length > 0;
 
     await this._migrateCapabilities(isRootDevice);
-    await this._migrateSettings(isRootDevice);
+    await this._migrateSettings();
 
     if (isRootDevice) {
-      // Force Z-Wave Param 3 = 1 (Previous state after power failure) on every startup.
-      // Delayed 10s to avoid competing with initial METER_GET traffic from sub-devices.
-      this.homey.setTimeout(() => {
-        const configCC = this.node.CommandClass['COMMAND_CLASS_CONFIGURATION'];
-        if (configCC) {
-          configCC.CONFIGURATION_SET({
-            'Parameter Number': 3,
-            Level: { Size: 1, Default: false },
-            'Configuration Value': Buffer.from([1]),
-          }).then(() => {
-            this.log('Param 3 (State after power failure) set to: Previous state');
-          }).catch(err => {
-            this.log('Param 3 SET error (device may not have ACKed):', err.message);
-          });
-        }
-      }, 10000);
-
       // GreenWave firmware bug (treatDestinationEndpointAsSource):
       // All unsolicited METER_REPORTs arrive at MultiChannelNode 1 regardless of which
       // socket generated them. When any report arrives, we trigger _getCapabilityValue
@@ -90,19 +73,13 @@ class GreenwaveDevice extends ZwaveDevice {
     });
   }
 
-  async _migrateSettings(isRootDevice) {
+  async _migrateSettings() {
     const current = this.getSettings();
     const desired = {
       poll_interval_measure: 0,
       poll_interval_onoff: 0,
       poll_interval_meter: 300,
     };
-    // Ensure root device has correct Z-Wave configuration parameters
-    if (isRootDevice) {
-      if (current.zwave_3 === undefined || current.zwave_3 === null || current.zwave_3 === '2' || current.zwave_3 === 2) {
-        desired.zwave_3 = '1'; // Previous state after power failure
-      }
-    }
     const updates = {};
     for (const [key, value] of Object.entries(desired)) {
       if (current[key] !== value) updates[key] = value;
