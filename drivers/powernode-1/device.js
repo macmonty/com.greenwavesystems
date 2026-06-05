@@ -25,20 +25,28 @@ class GreenwaveDevice extends ZwaveDevice {
       },
     });
     this.registerCapability('onoff', 'SWITCH_BINARY', {
+      get: 'SWITCH_BINARY_GET',
       getOpts: {
-        getOnStart: true, 
+        getOnStart: true,
         pollInterval: 'poll_interval_onoff',
         pollMultiplication: 1000,
       },
+      set: 'SWITCH_BINARY_SET',
+      setParser: value => ({ 'Switch Value': value ? 'on/enable' : 'off/disable' }),
+      report: 'SWITCH_BINARY_REPORT',
+      reportParser: report => {
+        const val = report['Value'];
+        if (val === 'on/enable' || val === 255 || val === true) return true;
+        if (val === 'off/disable' || val === 0 || val === false) return false;
+        return null;
+      },
     });
 
-    // register a report listener
     this.registerReportListener(
       'SWITCH_BINARY',
       'SWITCH_BINARY_REPORT',
-      'METER',
       (rawReport, parsedReport) => {
-        console.log('registerReportListener', rawReport, parsedReport);
+        this.log('SWITCH_BINARY_REPORT', rawReport, parsedReport);
       },
     );
   }

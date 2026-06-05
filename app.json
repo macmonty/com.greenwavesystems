@@ -5,7 +5,7 @@
     "en": "Greenwave Systems",
     "nl": "Greenwave Systems"
   },
-  "version": "1.1.1",
+  "version": "1.1.2",
   "compatibility": ">=5.0.0",
   "sdk": 3,
   "author": {
@@ -39,6 +39,7 @@
     "large": "/assets/images/large.jpg",
     "small": "/assets/images/small.jpg"
   },
+  "brandColor": "#00A650",
   "drivers": [
     {
       "name": {
@@ -120,7 +121,7 @@
       "id": "powernode-1",
       "settings": [
         {
-          "id": 0,
+          "id": "zwave_0",
           "type": "number",
           "attr": {
             "min": 1,
@@ -137,7 +138,7 @@
           }
         },
         {
-          "id": 1,
+          "id": "zwave_1",
           "type": "number",
           "attr": {
             "min": 1,
@@ -173,7 +174,7 @@
         {
           "id": "poll_interval_measure",
           "type": "number",
-          "unitunits": {
+          "units": {
             "en": "seconds"
           },
           "attr": {
@@ -277,7 +278,7 @@
           {
             "id": 0,
             "size": 1,
-            "value": 80
+            "value": 10
           },
           {
             "id": 1,
@@ -363,7 +364,7 @@
       "id": "powernode-6",
       "settings": [
         {
-          "id": 0,
+          "id": "zwave_0",
           "type": "number",
           "attr": {
             "min": 1,
@@ -380,7 +381,7 @@
           }
         },
         {
-          "id": 1,
+          "id": "zwave_1",
           "type": "number",
           "attr": {
             "min": 1,
@@ -416,7 +417,7 @@
         {
           "id": "poll_interval_measure",
           "type": "number",
-          "unitunits": {
+          "units": {
             "en": "seconds"
           },
           "attr": {

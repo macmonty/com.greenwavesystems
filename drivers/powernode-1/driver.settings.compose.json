@@ -1,6 +1,6 @@
 [
   {
-    "id": 0,
+    "id": "zwave_0",
     "type": "number",
     "attr": {
       "min": 1,
@@ -17,7 +17,7 @@
     }
   },
   {
-    "id": 1,
+    "id": "zwave_1",
     "type": "number",
     "attr": {
       "min": 1,
@@ -53,7 +53,7 @@
   {
     "id": "poll_interval_measure",
     "type": "number",
-    "unitunits": { "en": "seconds" },
+    "units": { "en": "seconds" },
     "attr": {
       "min": 0,
       "max": 7200
