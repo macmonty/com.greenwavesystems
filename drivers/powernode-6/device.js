@@ -13,6 +13,21 @@ class GreenwaveDevice extends ZwaveDevice {
     await this._migrateSettings(isRootDevice);
 
     if (isRootDevice) {
+      // Force Z-Wave Param 3 = 1 (Previous state after power failure) on every startup.
+      // This ensures the device always has the correct value regardless of pairing history.
+      const configCC = this.node.CommandClass['COMMAND_CLASS_CONFIGURATION'];
+      if (configCC) {
+        configCC.CONFIGURATION_SET({
+          'Parameter Number': 3,
+          Level: { Size: 1, Default: false },
+          'Configuration Value': Buffer.from([1]),
+        }).then(() => {
+          this.log('Param 3 (State after power failure) set to: Previous state');
+        }).catch(err => {
+          this.log('Param 3 SET error (device may not have ACKed):', err.message);
+        });
+      }
+
       // GreenWave firmware bug (treatDestinationEndpointAsSource):
       // All unsolicited METER_REPORTs arrive at MultiChannelNode 1 regardless of which
       // socket generated them. When any report arrives, we trigger _getCapabilityValue
