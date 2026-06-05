@@ -1,3 +1,5 @@
 node_modules
 .homeybuild
 package-lock.json
+fetch-logs.js
+fetch-logs.mjs
