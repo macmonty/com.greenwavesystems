@@ -10,7 +10,7 @@ class GreenwaveDevice extends ZwaveDevice {
     const isRootDevice = this.node.MultiChannelNodes && Object.keys(this.node.MultiChannelNodes).length > 0;
 
     await this._migrateCapabilities(isRootDevice);
-    await this._migrateSettings();
+    await this._migrateSettings(isRootDevice);
 
     if (isRootDevice) {
       // GreenWave firmware bug (treatDestinationEndpointAsSource):
@@ -73,13 +73,19 @@ class GreenwaveDevice extends ZwaveDevice {
     });
   }
 
-  async _migrateSettings() {
+  async _migrateSettings(isRootDevice) {
     const current = this.getSettings();
     const desired = {
       poll_interval_measure: 0,
       poll_interval_onoff: 0,
       poll_interval_meter: 300,
     };
+    // Ensure root device has correct Z-Wave configuration parameters
+    if (isRootDevice) {
+      if (current.zwave_3 === undefined || current.zwave_3 === null || current.zwave_3 === '2' || current.zwave_3 === 2) {
+        desired.zwave_3 = '1'; // Previous state after power failure
+      }
+    }
     const updates = {};
     for (const [key, value] of Object.entries(desired)) {
       if (current[key] !== value) updates[key] = value;
