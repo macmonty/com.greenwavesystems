@@ -3,7 +3,7 @@
 ## 1. Arrancar la app en modo desarrollo
 
 ```bash
-cd C:\Developer\com.greenwavesystems-master
+cd C:\Developer\com.greenwavesystems
 homey app run --remote
 ```
 

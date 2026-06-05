@@ -10,7 +10,7 @@ necesario y pueda continuar el trabajo desde el estado actual del código.
 ```
 Tengo un proyecto Homey app para el GreenWave PowerNode 6 (Z-Wave).
 Partimos del repo original https://github.com/ronaldderksen/com.greenwavesystems
-y está en C:\Developer\com.greenwavesystems-master.
+y está en C:\Developer\com.greenwavesystems.
 
 Lee el workflow en .claude/workflow.md antes de empezar.
 
@@ -93,7 +93,7 @@ Z-Wave Node ID del dispositivo: 28
 
 ### Herramientas de desarrollo
 
-- Para arrancar: homey app run --remote (desde C:\Developer\com.greenwavesystems-master)
+- Para arrancar: homey app run --remote (desde C:\Developer\com.greenwavesystems)
 - Para leer logs: leer el fichero .output del task en background
 - Para leer consumos: usar homey api raw --path /api/manager/devices/device --json
 - Detalle completo en .claude/workflow.md
