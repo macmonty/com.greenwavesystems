@@ -24,6 +24,20 @@ homey app install
 
 ## Changelog:
 
+### v1.1.2
+**Bug fix:**
+
+- Fixed critical power consumption routing bug on PowerNode 6 (NP240/NP242).
+  The firmware has a known issue (`treatDestinationEndpointAsSource`) where all unsolicited
+  METER_REPORTs always arrived at endpoint 1, causing all power consumption to appear on
+  Socket 1 regardless of which socket had a load connected.
+  A "poll on change" mechanism now triggers individual METER_GET requests per socket
+  whenever a spontaneous report arrives, giving accurate per-socket readings (~1–2s latency).
+- Power reading forced to 0W immediately when a socket is turned off.
+- Active METER_GET triggered 1 second after turning on a socket for near-instant feedback.
+- Default "Power change for update" parameter corrected from 80% to 10%.
+- Power values now read on app startup (`getOnStart`).
+
 ### v1.1.1 - (re-pair of devices is needed)
 **update:**
 
