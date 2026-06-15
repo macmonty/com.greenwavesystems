@@ -22,7 +22,7 @@ class GreenwaveDevice extends ZwaveDevice {
         this._refreshDebounce = this.homey.setTimeout(() => {
           this._refreshDebounce = null;
           // Skip sockets that are OFF — they already show 0W, no GET needed.
-          const subDevices = this.driver.getDevices().filter(d => d !== this && d.getCapabilityValue('onoff') !== false);
+          const subDevices = this.driver.getDevices().filter(d => d !== this && d.hasCapability('measure_power') && d.getCapabilityValue('onoff') !== false);
           this.log(`Power change — refreshing ${subDevices.length} ON sockets`);
           for (const subDevice of subDevices) {
             subDevice._getCapabilityValue('measure_power', 'METER')
