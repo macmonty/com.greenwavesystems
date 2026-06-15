@@ -66,12 +66,17 @@
       {
         "id": 0,
         "size": 1,
-        "value": 10
+        "value": 20
       },
       {
         "id": 1,
         "size": 1,
         "value": "0xFF"
+      },
+      {
+        "id": 3,
+        "size": 1,
+        "value": 1
       }
     ],
     "multiChannelNodes": {

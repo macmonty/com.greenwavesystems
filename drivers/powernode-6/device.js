@@ -14,31 +14,52 @@ class GreenwaveDevice extends ZwaveDevice {
 
     if (isRootDevice) {
       // GreenWave firmware bug (treatDestinationEndpointAsSource):
-      // All unsolicited METER_REPORTs arrive at MultiChannelNode 1 regardless of which
-      // socket generated them. When any report arrives, we trigger _getCapabilityValue
-      // on every sub-device — each GET targets the correct endpoint and the response
-      // routes back correctly, giving accurate per-socket readings.
+      // All METER_REPORTs arrive at MC1 regardless of which socket sent them.
+      // We refresh all sockets on each report. Socket 1 uses _inExplicitGet to
+      // accept only GET-response updates (not spurious unsolicited events).
       this.registerMultiChannelReportListener(1, 'METER', 'METER_REPORT', () => {
-        const subDevices = this.driver.getDevices().filter(d => d !== this);
-        this.log(`Power change detected — refreshing ${subDevices.length} sockets`);
-        for (const subDevice of subDevices) {
-          subDevice._getCapabilityValue('measure_power', 'METER')
-            .catch(err => this.log(`Socket refresh error: ${err.message}`));
-        }
+        if (this._refreshDebounce) this.homey.clearTimeout(this._refreshDebounce);
+        this._refreshDebounce = this.homey.setTimeout(() => {
+          this._refreshDebounce = null;
+          // Skip sockets that are OFF — they already show 0W, no GET needed.
+          const subDevices = this.driver.getDevices().filter(d => d !== this && d.getCapabilityValue('onoff') !== false);
+          this.log(`Power change — refreshing ${subDevices.length} ON sockets`);
+          for (const subDevice of subDevices) {
+            subDevice._getCapabilityValue('measure_power', 'METER')
+              .catch(err => this.log(`Socket refresh error: ${err.message}`));
+          }
+        }, 50);
       });
     } else {
+      const myMcId = Number(this.getData().multiChannelNodeId);
+      const isSocket1 = myMcId === 1;
+
       this.registerCapability('measure_power', 'METER', {
         reportParserOverride: true,
         reportParser: report => {
           if (this.getCapabilityValue('onoff') === false) return 0;
+          if (isSocket1 && !this._inExplicitGet) {
+            // Reject unsolicited events: MC1 receives all sockets' reports due to firmware bug.
+            // Only accept values that come from an explicit GET (_inExplicitGet = true).
+            return null;
+          }
           return report['Meter Value (Parsed)'] ?? null;
         },
         getOpts: {
-          getOnStart: true,
+          getOnStart: !isSocket1,
           pollInterval: 'poll_interval_measure',
           pollMultiplication: 1000,
         },
       });
+
+      if (isSocket1) {
+        // Delayed startup GET after sockets 2-6 have finished theirs
+        this.homey.setTimeout(() => {
+          this._getCapabilityValue('measure_power', 'METER')
+            .catch(err => this.log('Socket 1 startup GET:', err.message));
+        }, 2000);
+      }
+
       this.registerCapability('meter_power', 'METER', {
         getOpts: {
           getOnStart: false,
@@ -53,14 +74,12 @@ class GreenwaveDevice extends ZwaveDevice {
         fn: value => {
           if (!isRootDevice && this.hasCapability('measure_power')) {
             if (value === false) {
-              // Force 0W immediately on turn off
               this.setCapabilityValue('measure_power', 0).catch(this.error);
             } else {
-              // Actively read power after 2s to avoid waiting for spontaneous report
               this.homey.setTimeout(() => {
                 this._getCapabilityValue('measure_power', 'METER')
                   .catch(err => this.log('measure_power get on turn on:', err.message));
-              }, 1000);
+              }, 500);
             }
           }
         },
@@ -71,6 +90,24 @@ class GreenwaveDevice extends ZwaveDevice {
         pollMultiplication: 1000,
       },
     });
+  }
+
+  // For socket 1: sets _inExplicitGet so reportParser accepts the GET response.
+  // For sockets 2-6: no special handling needed (their responses go through _onReport
+  // correctly and socket 1 is gated by _inExplicitGet).
+  async _getCapabilityValue(capabilityId, commandClassId) {
+    if (capabilityId === 'measure_power') {
+      const mcId = Number(this.getData().multiChannelNodeId);
+      if (mcId === 1) {
+        this._inExplicitGet = true;
+        try {
+          return await super._getCapabilityValue(capabilityId, commandClassId);
+        } finally {
+          this._inExplicitGet = false;
+        }
+      }
+    }
+    return super._getCapabilityValue(capabilityId, commandClassId);
   }
 
   async _migrateSettings() {
@@ -108,8 +145,6 @@ class GreenwaveDevice extends ZwaveDevice {
     }
   }
 
-  // Greenwave PowerNode 6 executes commands but sometimes does not send Z-Wave ACK
-  // Suppress NO_ACK errors to avoid false warnings in Homey UI
   async _setCapabilityValue(capabilityId, commandClassId, value, opts = {}) {
     try {
       return await super._setCapabilityValue(capabilityId, commandClassId, value, opts);

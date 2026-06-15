@@ -1,12 +1,53 @@
 [
   {
+    "id": "zwave_3",
+    "type": "dropdown",
+    "value": "1",
+    "label": {
+      "en": "State after power failure",
+      "nl": "Status na stroomstoring",
+      "es": "Estado tras corte de corriente"
+    },
+    "hint": {
+      "en": "State the sockets return to after a power failure.\nDefault: Previous state.",
+      "nl": "Status van de stopcontacten na een stroomstoring.\nStandaard: Vorige status.",
+      "es": "Estado al que vuelven las tomas tras un corte de corriente.\nPor defecto: Último estado."
+    },
+    "values": [
+      {
+        "id": "0",
+        "label": {
+          "en": "Always off",
+          "nl": "Altijd uit",
+          "es": "Siempre apagado"
+        }
+      },
+      {
+        "id": "1",
+        "label": {
+          "en": "Previous state",
+          "nl": "Vorige status",
+          "es": "Último estado"
+        }
+      },
+      {
+        "id": "2",
+        "label": {
+          "en": "Always on",
+          "nl": "Altijd aan",
+          "es": "Siempre encendido"
+        }
+      }
+    ]
+  },
+  {
     "id": "zwave_0",
     "type": "number",
     "attr": {
       "min": 1,
       "max": 100
     },
-    "value": 80,
+    "value": 20,
     "label": {
       "en": "Power change for update",
       "nl": "Wijziging in energie voor update"
