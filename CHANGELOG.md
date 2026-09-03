@@ -2,6 +2,26 @@
 
 ---
 
+## v1.1.4 (2026-09-03)
+
+### Z-Wave burst congestion reduction (PowerNode 6)
+
+#### Problem
+The GreenWave PowerNode 6 firmware is known to be sensitive to bursts of
+near-simultaneous commands (see the Param 3 startup-delay fix). Two spots still
+fired several `METER_GET` requests at once:
+- On app start, sockets 2-6 all issued their startup `METER_GET` in the same tick
+  (only socket 1 was delayed).
+- On the debounced "poll on change" refresh, every ON socket's `METER_GET` fired
+  simultaneously.
+
+#### Solution
+Both are now staggered (300ms apart on startup, 150ms apart on refresh) instead of
+firing in a burst. Same total number of Z-Wave messages, spread out over time to
+reduce the risk of the device dropping or NACKing commands sent too close together.
+
+---
+
 ## v1.1.3 (2026-09-03)
 
 ### Z-Wave traffic reduction (PowerNode 6)

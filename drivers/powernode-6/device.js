@@ -30,10 +30,15 @@ class GreenwaveDevice extends ZwaveDevice {
             && d.getData().token === rootToken
             && d.getCapabilityValue('onoff') !== false);
           this.log(`Power change — refreshing ${subDevices.length} ON sockets`);
-          for (const subDevice of subDevices) {
-            subDevice._getCapabilityValue('measure_power', 'METER')
-              .catch(err => this.log(`Socket refresh error: ${err.message}`));
-          }
+          // Stagger the GETs (150ms apart) instead of firing them all at once —
+          // this GreenWave firmware is known to choke on bursts of near-simultaneous
+          // commands (see the Param 3 startup delay fix).
+          subDevices.forEach((subDevice, i) => {
+            this.homey.setTimeout(() => {
+              subDevice._getCapabilityValue('measure_power', 'METER')
+                .catch(err => this.log(`Socket refresh error: ${err.message}`));
+            }, i * 150);
+          });
         }, 50);
       });
     } else {
@@ -52,19 +57,21 @@ class GreenwaveDevice extends ZwaveDevice {
           return report['Meter Value (Parsed)'] ?? null;
         },
         getOpts: {
-          getOnStart: !isSocket1,
+          getOnStart: false,
           pollInterval: 'poll_interval_measure',
           pollMultiplication: 1000,
         },
       });
 
-      if (isSocket1) {
-        // Delayed startup GET after sockets 2-6 have finished theirs
-        this.homey.setTimeout(() => {
-          this._getCapabilityValue('measure_power', 'METER')
-            .catch(err => this.log('Socket 1 startup GET:', err.message));
-        }, 2000);
-      }
+      // Stagger each socket's startup GET (300ms apart) instead of firing them all
+      // at once — avoids a burst of simultaneous METER_GET requests to this
+      // congestion-prone firmware. Socket 1 goes last since its passive listener
+      // must reject spurious unsolicited reports from sockets 2-6 while they start up.
+      const startupDelay = isSocket1 ? 300 * 6 : 300 * (myMcId - 1);
+      this.homey.setTimeout(() => {
+        this._getCapabilityValue('measure_power', 'METER')
+          .catch(err => this.log(`Socket ${myMcId} startup GET:`, err.message));
+      }, startupDelay);
 
       this.registerCapability('meter_power', 'METER', {
         getOpts: {
