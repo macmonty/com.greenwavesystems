@@ -2,41 +2,30 @@
 
 ---
 
-## v1.1.4 (2026-09-03)
-
-### Z-Wave burst congestion reduction (PowerNode 6)
-
-#### Problem
-The GreenWave PowerNode 6 firmware is known to be sensitive to bursts of
-near-simultaneous commands (see the Param 3 startup-delay fix). Two spots still
-fired several `METER_GET` requests at once:
-- On app start, sockets 2-6 all issued their startup `METER_GET` in the same tick
-  (only socket 1 was delayed).
-- On the debounced "poll on change" refresh, every ON socket's `METER_GET` fired
-  simultaneously.
-
-#### Solution
-Both are now staggered (300ms apart on startup, 150ms apart on refresh) instead of
-firing in a burst. Same total number of Z-Wave messages, spread out over time to
-reduce the risk of the device dropping or NACKing commands sent too close together.
-
----
-
 ## v1.1.3 (2026-09-03)
 
 ### Z-Wave traffic reduction (PowerNode 6)
 
 #### Problem
-The "poll on change" refresh (added in v1.1.2) scoped its `METER_GET` refresh to
-`driver.getDevices()`, i.e. **every** PowerNode-6 sub-device registered with the
-driver. With more than one PowerNode-6 strip paired to the same Homey, a power
-change on one strip triggered unnecessary `METER_GET` requests to the sockets of
-every *other* strip too, needlessly saturating the Z-Wave network.
+1. The "poll on change" refresh (added in v1.1.2) scoped its `METER_GET` refresh to
+   `driver.getDevices()`, i.e. **every** PowerNode-6 sub-device registered with the
+   driver. With more than one PowerNode-6 strip paired to the same Homey, a power
+   change on one strip triggered unnecessary `METER_GET` requests to the sockets of
+   every *other* strip too, needlessly saturating the Z-Wave network.
+2. The GreenWave PowerNode 6 firmware is also known to be sensitive to bursts of
+   near-simultaneous commands (see the Param 3 startup-delay fix). Two spots still
+   fired several `METER_GET` requests at once: sockets 2-6 all issued their startup
+   `METER_GET` in the same tick (only socket 1 was delayed), and every ON socket's
+   `METER_GET` fired simultaneously on the debounced "poll on change" refresh.
 
 #### Solution
-The refresh is now scoped to sub-devices sharing the same pairing `token`
-(`getData().token`) as the root device that received the report — i.e. only the
-sockets of the physical strip that actually changed are refreshed.
+1. The refresh is now scoped to sub-devices sharing the same pairing `token`
+   (`getData().token`) as the root device that received the report — i.e. only the
+   sockets of the physical strip that actually changed are refreshed.
+2. Both startup and poll-on-change GETs are now staggered (300ms apart on startup,
+   150ms apart on refresh) instead of firing in a burst. Same total number of
+   Z-Wave messages, spread out over time to reduce the risk of the device dropping
+   or NACKing commands sent too close together.
 
 ---
 
