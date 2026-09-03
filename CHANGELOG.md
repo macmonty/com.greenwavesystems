@@ -2,6 +2,24 @@
 
 ---
 
+## v1.1.3 (2026-09-03)
+
+### Z-Wave traffic reduction (PowerNode 6)
+
+#### Problem
+The "poll on change" refresh (added in v1.1.2) scoped its `METER_GET` refresh to
+`driver.getDevices()`, i.e. **every** PowerNode-6 sub-device registered with the
+driver. With more than one PowerNode-6 strip paired to the same Homey, a power
+change on one strip triggered unnecessary `METER_GET` requests to the sockets of
+every *other* strip too, needlessly saturating the Z-Wave network.
+
+#### Solution
+The refresh is now scoped to sub-devices sharing the same pairing `token`
+(`getData().token`) as the root device that received the report — i.e. only the
+sockets of the physical strip that actually changed are refreshed.
+
+---
+
 ## v1.1.2 (2026-06-05)
 
 ### Critical bug fix — Power consumption routing (PowerNode 6)

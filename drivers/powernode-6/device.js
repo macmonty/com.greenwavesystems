@@ -17,12 +17,18 @@ class GreenwaveDevice extends ZwaveDevice {
       // All METER_REPORTs arrive at MC1 regardless of which socket sent them.
       // We refresh all sockets on each report. Socket 1 uses _inExplicitGet to
       // accept only GET-response updates (not spurious unsolicited events).
+      const rootToken = this.getData().token;
       this.registerMultiChannelReportListener(1, 'METER', 'METER_REPORT', () => {
         if (this._refreshDebounce) this.homey.clearTimeout(this._refreshDebounce);
         this._refreshDebounce = this.homey.setTimeout(() => {
           this._refreshDebounce = null;
-          // Skip sockets that are OFF — they already show 0W, no GET needed.
-          const subDevices = this.driver.getDevices().filter(d => d !== this && d.hasCapability('measure_power') && d.getCapabilityValue('onoff') !== false);
+          // Only refresh sockets of THIS physical strip (same pairing token) that are
+          // ON — sockets on other PowerNode-6 strips paired to the same Homey are
+          // untouched, and OFF sockets already show 0W and need no GET.
+          const subDevices = this.driver.getDevices().filter(d => d !== this
+            && d.hasCapability('measure_power')
+            && d.getData().token === rootToken
+            && d.getCapabilityValue('onoff') !== false);
           this.log(`Power change — refreshing ${subDevices.length} ON sockets`);
           for (const subDevice of subDevices) {
             subDevice._getCapabilityValue('measure_power', 'METER')
