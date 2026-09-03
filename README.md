@@ -24,6 +24,17 @@ homey app install
 
 ## Changelog:
 
+### v1.1.3
+**Improvement — Z-Wave traffic reduction (PowerNode 6):**
+
+- The "poll on change" refresh (added in v1.1.2) now only refreshes sockets of the
+  physical strip that actually changed, instead of every PowerNode-6 sub-device
+  registered with the driver — avoids needless `METER_GET` traffic to unrelated
+  strips when more than one PowerNode-6 is paired to the same Homey.
+- Startup and poll-on-change `METER_GET` requests are now staggered (300ms/150ms
+  apart) instead of firing in a burst, reducing the risk of the device dropping or
+  NACKing commands sent too close together.
+
 ### v1.1.2
 **Bug fix:**
 

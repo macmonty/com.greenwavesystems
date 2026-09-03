@@ -1,0 +1,10 @@
+{
+  "1.1.3": {
+    "en": "Z-Wave traffic reduction (PowerNode 6): poll-on-change refresh now only targets the physical strip that changed instead of every paired PowerNode-6, and startup/poll-on-change METER_GET requests are staggered instead of firing in a burst.",
+    "nl": "Minder Z-Wave verkeer (PowerNode 6): de \"poll on change\" refresh richt zich nu alleen op de fysieke strip die daadwerkelijk veranderde in plaats van elke gekoppelde PowerNode-6, en METER_GET verzoeken bij opstarten/wijzigingen worden gespreid verzonden in plaats van in een burst."
+  },
+  "1.1.2": {
+    "en": "Critical bug fix: power consumption on PowerNode 6 now reports correctly per socket instead of always appearing on Socket 1.",
+    "nl": "Kritieke bugfix: energieverbruik op de PowerNode 6 wordt nu correct per stopcontact gerapporteerd in plaats van altijd op stopcontact 1."
+  }
+}
