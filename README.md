@@ -46,7 +46,7 @@ homey app install
   whenever a spontaneous report arrives, giving accurate per-socket readings (~1–2s latency).
 - Power reading forced to 0W immediately when a socket is turned off.
 - Active METER_GET triggered 1 second after turning on a socket for near-instant feedback.
-- Default "Power change for update" parameter corrected from 80% to 10%.
+- Default "Power change for update" parameter corrected from 80% to 20%.
 - Power values now read on app startup (`getOnStart`).
 
 ### v1.1.1 - (re-pair of devices is needed)

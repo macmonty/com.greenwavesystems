@@ -53,8 +53,8 @@
       "nl": "Wijziging in energie voor update"
     },
     "hint": {
-      "en": "Power change required to send an update to controller, in % from 1 to 100, default: 80 [%].",
-      "nl": "Wijziging in energie voordat er een update naar de controller wordt gestuurd, in % van 1 tot 100, standaard: 80 [%].."
+      "en": "Power change required to send an update to controller, in % from 1 to 100, default: 20 [%].",
+      "nl": "Wijziging in energie voordat er een update naar de controller wordt gestuurd, in % van 1 tot 100, standaard: 20 [%]."
     }
   },
   {

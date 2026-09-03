@@ -52,7 +52,7 @@ A **"poll on change"** mechanism was implemented in the root device:
 
 #### Additional changes
 - `getOnStart: true` on `measure_power` — power values are read on app startup for all sockets.
-- `defaultConfiguration` Param 0 corrected from 80% to **10%** — device reports on 10%
+- `defaultConfiguration` Param 0 corrected from 80% to **20%** — device reports on 20%
   current variation by default when paired.
 - `reportParser` added to sub-devices: forces 0W when socket is turned off, preventing
   transient values appearing after switching off.
@@ -86,7 +86,7 @@ Apply these values in **Device settings → each socket (S1–S6)** in Homey:
 
 | Parameter | Recommended value | Description |
 |-----------|-------------------|-------------|
-| **Power change for update** | **10%** | Minimum current variation to send an unsolicited report to Homey. Lower values give faster updates but more Z-Wave traffic. Range: 1–100%. |
+| **Power change for update** | **20%** | Minimum current variation to send an unsolicited report to Homey. Lower values give faster updates but more Z-Wave traffic. Range: 1–100%. |
 | **Keep alive time** | **255 min** | Minutes without contact before the LED starts blinking. 255 = effectively disabled. |
 | **Poll interval on/off** | **0 s** (disabled) | On/off status polling. Not needed with unsolicited reports. |
 | **Poll interval measure (W)** | **0 s** (disabled) | Instantaneous power polling. Not needed — the poll-on-change mechanism handles updates automatically. |
@@ -94,7 +94,7 @@ Apply these values in **Device settings → each socket (S1–S6)** in Homey:
 
 > **Note**: The "Power change for update" parameter is sent to the Z-Wave device via
 > `CONFIGURATION_SET`. If the current value is 80% (old default), change it manually
-> to 10% in each socket's settings in Homey.
+> to 20% in each socket's settings in Homey.
 
 ---
 
