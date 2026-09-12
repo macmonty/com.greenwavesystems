@@ -31,6 +31,13 @@ either — these sockets could stay stuck showing a stale/0W reading indefinitel
 4. The existing `meter_power` (kWh) poll had the same un-staggered issue — all 6
    sockets polling every 300s in the same instant. Switched to the same manual
    staggered scheduling as `measure_power`.
+5. **`defaultConfiguration` only applies at pairing time** — sockets paired before
+   this fix would otherwise stay stuck on their old threshold (20%/80%) forever,
+   since `zwave_0`/`zwave_1`/`zwave_3` settings had no `zwave: {index, size}`
+   metadata, so changing them in the Homey UI silently did nothing to the
+   hardware. Added that metadata to `zwave_0` (Power change for update), and a
+   one-time, staggered `CONFIGURATION_SET` migration on boot that pushes 10% to
+   already-paired sockets without needing to remove/re-add the strip.
 
 ---
 

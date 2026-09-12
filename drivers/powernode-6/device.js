@@ -12,6 +12,13 @@ class GreenwaveDevice extends ZwaveDevice {
     await this._migrateCapabilities(isRootDevice);
     await this._migrateSettings();
 
+    // One-time migration: push the corrected "Power change for update" (Param 0)
+    // to devices paired before this fix — defaultConfiguration only applies at
+    // pairing time, so already-paired sockets would otherwise be stuck on their
+    // old value forever. Staggered so root+6 sockets don't all send at once.
+    const mcIdForStagger = isRootDevice ? 0 : Number(this.getData().multiChannelNodeId);
+    this._migrateParam0(2400 + mcIdForStagger * 300);
+
     if (isRootDevice) {
       // GreenWave firmware bug (treatDestinationEndpointAsSource):
       // All METER_REPORTs arrive at MC1 regardless of which socket sent them.
@@ -154,6 +161,27 @@ class GreenwaveDevice extends ZwaveDevice {
       if (args.changedKeys.includes('poll_interval_meter')) this._schedulePoll('meter_power', 'poll_interval_meter');
     }
     return result;
+  }
+
+  // Sends CONFIGURATION_SET for Param 0 (Power change for update) once, so
+  // sockets paired before this fix pick up the corrected 10% threshold without
+  // being removed/re-added. Retries on next boot if it fails (flag is only set
+  // after a successful send).
+  async _migrateParam0(delayMs) {
+    if (await this.getStoreValue('param0_migrated_v1')) return;
+    this.homey.setTimeout(() => {
+      this.configurationSet({ index: 0, size: 1, signed: true }, 10)
+        .then(async () => {
+          this.log('Migrated Param 0 (Power change for update) to 10%');
+          // Keep the Homey settings UI in sync with the value just pushed to
+          // hardware (harmless if this triggers one redundant CONFIGURATION_SET).
+          if (this.getSetting('zwave_0') !== 10) {
+            await this.setSettings({ zwave_0: 10 }).catch(err => this.log('zwave_0 setting sync failed:', err.message));
+          }
+          await this.setStoreValue('param0_migrated_v1', true);
+        })
+        .catch(err => this.log('Param 0 migration failed:', err.message));
+    }, delayMs);
   }
 
   async _migrateSettings() {

@@ -412,6 +412,11 @@
         {
           "id": "zwave_0",
           "type": "number",
+          "zwave": {
+            "index": 0,
+            "size": 1,
+            "signed": true
+          },
           "attr": {
             "min": 1,
             "max": 100

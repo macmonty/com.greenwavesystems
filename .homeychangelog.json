@@ -1,7 +1,7 @@
 {
   "1.1.4": {
-    "en": "Fix: measure_power could get stuck on low/steady loads (~1-2W) that never crossed the report threshold. Lowered the threshold to 10% and added a staggered 600s fallback poll on top of the existing poll-on-change mechanism. Also fixed the meter_power (kWh) poll to stagger across sockets instead of all 6 firing at once.",
-    "nl": "Fix: measure_power kon vastlopen bij lage/stabiele belastingen (~1-2W) die de rapportagedrempel nooit overschreden. Drempel verlaagd naar 10% en een gespreide 600s terugvalpolling toegevoegd bovenop het bestaande poll-on-change mechanisme. Ook de meter_power (kWh) polling gespreid over de stopcontacten in plaats van alle 6 tegelijk."
+    "en": "Fix: measure_power could get stuck on low/steady loads (~1-2W) that never crossed the report threshold. Lowered the threshold to 10% and added a staggered 600s fallback poll on top of the existing poll-on-change mechanism. Also fixed the meter_power (kWh) poll to stagger across sockets instead of all 6 firing at once, and already-paired sockets now get the new 10% threshold pushed to them automatically without removing/re-adding the strip.",
+    "nl": "Fix: measure_power kon vastlopen bij lage/stabiele belastingen (~1-2W) die de rapportagedrempel nooit overschreden. Drempel verlaagd naar 10% en een gespreide 600s terugvalpolling toegevoegd bovenop het bestaande poll-on-change mechanisme. Ook de meter_power (kWh) polling gespreid over de stopcontacten in plaats van alle 6 tegelijk, en reeds gekoppelde stopcontacten krijgen de nieuwe 10% drempel nu automatisch doorgestuurd zonder de strip te hoeven verwijderen/opnieuw toe te voegen."
   },
   "1.1.3": {
     "en": "Z-Wave traffic reduction (PowerNode 6): poll-on-change refresh now only targets the physical strip that changed instead of every paired PowerNode-6, and startup/poll-on-change METER_GET requests are staggered instead of firing in a burst.",

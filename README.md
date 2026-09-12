@@ -35,6 +35,9 @@ homey app install
   poll, staggered per socket to avoid simultaneous bursts.
 - The existing `meter_power` (kWh) poll had the same un-staggered issue — now
   uses the same per-socket staggered scheduling.
+- Sockets paired before this fix now get the new 10% threshold pushed to them
+  automatically (one-time, staggered `CONFIGURATION_SET` on boot) — no need to
+  remove and re-add the strip.
 
 ### v1.1.3
 **Improvement — Z-Wave traffic reduction (PowerNode 6):**
