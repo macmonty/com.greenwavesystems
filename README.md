@@ -38,6 +38,9 @@ homey app install
 - Sockets paired before this fix now get the new 10% threshold pushed to them
   automatically (one-time, staggered `CONFIGURATION_SET` on boot) — no need to
   remove and re-add the strip.
+- The "turn on" `measure_power` GET (500ms after switching on) is now staggered
+  per socket too, so turning several on at once doesn't queue their GETs behind
+  each other.
 
 ### v1.1.3
 **Improvement — Z-Wave traffic reduction (PowerNode 6):**

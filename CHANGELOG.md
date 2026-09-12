@@ -38,6 +38,11 @@ either — these sockets could stay stuck showing a stale/0W reading indefinitel
    hardware. Added that metadata to `zwave_0` (Power change for update), and a
    one-time, staggered `CONFIGURATION_SET` migration on boot that pushes 10% to
    already-paired sockets without needing to remove/re-add the strip.
+6. The `measure_power` GET fired 500ms after turning a socket on used the same
+   fixed 500ms for every socket. Turning several sockets on within a short
+   window queues their SET/GET commands to the same physical node, so a GET
+   could land behind another socket's pending command and take several seconds
+   instead of ~500ms. Staggered by socket (500ms + (mcId-1)*300ms).
 
 ---
 

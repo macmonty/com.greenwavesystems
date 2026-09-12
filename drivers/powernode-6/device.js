@@ -104,10 +104,15 @@ class GreenwaveDevice extends ZwaveDevice {
             if (value === false) {
               this.setCapabilityValue('measure_power', 0).catch(this.error);
             } else {
+              // Staggered by socket (500ms + (mcId-1)*300ms): turning on several
+              // sockets within a short window queues their SET/GET commands to the
+              // same physical node, so a fixed 500ms for everyone can land behind
+              // another socket's pending command and take several seconds instead.
+              const mcId = Number(this.getData().multiChannelNodeId);
               this.homey.setTimeout(() => {
                 this._getCapabilityValue('measure_power', 'METER')
                   .catch(err => this.log('measure_power get on turn on:', err.message));
-              }, 500);
+              }, 500 + (mcId - 1) * 300);
             }
           }
         },
