@@ -13,11 +13,12 @@ class GreenwaveDevice extends ZwaveDevice {
     await this._migrateSettings();
 
     // One-time migration: push the corrected "Power change for update" (Param 0)
-    // to devices paired before this fix — defaultConfiguration only applies at
-    // pairing time, so already-paired sockets would otherwise be stuck on their
-    // old value forever. Staggered so root+6 sockets don't all send at once.
-    const mcIdForStagger = isRootDevice ? 0 : Number(this.getData().multiChannelNodeId);
-    this._migrateParam0(2400 + mcIdForStagger * 300);
+    // to strips paired before this fix — defaultConfiguration only applies at
+    // pairing time, so already-paired strips would otherwise be stuck on their
+    // old value forever. Only the root device has the CONFIGURATION command
+    // class (sub-devices only see their own endpoint's classes), and Param 0 is
+    // a single physical setting shared by the whole strip, not per-socket.
+    if (isRootDevice) this._migrateParam0(2400);
 
     if (isRootDevice) {
       // GreenWave firmware bug (treatDestinationEndpointAsSource):
