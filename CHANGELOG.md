@@ -2,6 +2,35 @@
 
 ---
 
+## v1.1.4 (2026-09-12)
+
+### Fix — measure_power not updating for low/steady loads (PowerNode 6)
+
+#### Problem
+The "poll on change" mechanism (v1.1.2/v1.1.3) only refreshes a socket's
+`measure_power` in reaction to a spontaneous `METER_REPORT` from the device. That
+report is only sent when consumption varies more than the "Power change for
+update" threshold — 20% by default. With a low, steady load (~1-2W), a 20%
+variation is a fraction of a watt: the device may never cross that threshold, no
+report is ever sent, and the refresh mechanism never fires. With
+`poll_interval_measure` forced to 0 (disabled), there was no periodic fallback
+either — these sockets could stay stuck showing a stale/0W reading indefinitely.
+
+#### Solution
+1. `defaultConfiguration` Param 0 lowered from 20% to **10%** (the device's
+   documented factory default, per zwave-js's config for this hardware), so
+   smaller load changes are more likely to cross the threshold on their own.
+2. `poll_interval_measure` default changed from `0` (disabled) to **600 seconds**
+   as a safety-net fallback poll, on top of (not replacing) the event-driven
+   "poll on change" mechanism, which still gives fast reaction to larger changes.
+3. The periodic poll is staggered per socket (each one offset by 300ms, baked into
+   its own recurring interval) instead of using the library's built-in poll timer
+   directly — avoids recreating the simultaneous-burst problem that motivated
+   disabling polling in the first place. Reacts live if the user changes the
+   interval in the device settings.
+
+---
+
 ## v1.1.3 (2026-09-03)
 
 ### Z-Wave traffic reduction (PowerNode 6)
@@ -86,15 +115,15 @@ Apply these values in **Device settings → each socket (S1–S6)** in Homey:
 
 | Parameter | Recommended value | Description |
 |-----------|-------------------|-------------|
-| **Power change for update** | **20%** | Minimum current variation to send an unsolicited report to Homey. Lower values give faster updates but more Z-Wave traffic. Range: 1–100%. |
+| **Power change for update** | **10%** | Minimum current variation to send an unsolicited report to Homey. Lower values give faster updates but more Z-Wave traffic. Range: 1–100%. |
 | **Keep alive time** | **255 min** | Minutes without contact before the LED starts blinking. 255 = effectively disabled. |
 | **Poll interval on/off** | **0 s** (disabled) | On/off status polling. Not needed with unsolicited reports. |
-| **Poll interval measure (W)** | **0 s** (disabled) | Instantaneous power polling. Not needed — the poll-on-change mechanism handles updates automatically. |
+| **Poll interval measure (W)** | **600 s** | Safety-net fallback poll for loads too steady to ever cross the "Power change" threshold. The poll-on-change mechanism still handles fast updates for larger changes. |
 | **Poll interval meter (kWh)** | **300 s** | Energy accumulator polling every 5 minutes. Recommended to keep the kWh counter up to date. |
 
 > **Note**: The "Power change for update" parameter is sent to the Z-Wave device via
-> `CONFIGURATION_SET`. If the current value is 80% (old default), change it manually
-> to 20% in each socket's settings in Homey.
+> `CONFIGURATION_SET`. If the current value is 80% or 20% (old defaults), change it
+> manually to 10% in each socket's settings in Homey.
 
 ---
 

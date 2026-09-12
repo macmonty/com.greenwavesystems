@@ -47,14 +47,14 @@
       "min": 1,
       "max": 100
     },
-    "value": 20,
+    "value": 10,
     "label": {
       "en": "Power change for update",
       "nl": "Wijziging in energie voor update"
     },
     "hint": {
-      "en": "Power change required to send an update to controller, in % from 1 to 100, default: 20 [%].",
-      "nl": "Wijziging in energie voordat er een update naar de controller wordt gestuurd, in % van 1 tot 100, standaard: 20 [%]."
+      "en": "Power change required to send an update to controller, in % from 1 to 100, default: 10 [%].",
+      "nl": "Wijziging in energie voordat er een update naar de controller wordt gestuurd, in % van 1 tot 100, standaard: 10 [%]."
     }
   },
   {
@@ -99,14 +99,14 @@
       "min": 0,
       "max": 7200
     },
-    "value": 300,
+    "value": 600,
     "label": {
       "en": "Poll interval measure (W)",
       "nl": "Poll interval measure (W)"
     },
     "hint": {
-      "en": "The amount of seconds between asking the device for a status update, 0 will disable polling.\nRange: 0 - 7200.\nDefault: 300 seconds.",
-      "nl": "Aantal seconden tussen het opvragen van een status update aan het apparaat, 0 zal polling uitschakelen.\nBereik: 0 - 7200.\nStandaard waarde: 300 seconden."
+      "en": "The amount of seconds between asking the device for a status update, 0 will disable polling. This is a fallback for low/steady loads that never vary enough to trigger a spontaneous report.\nRange: 0 - 7200.\nDefault: 600 seconds.",
+      "nl": "Aantal seconden tussen het opvragen van een status update aan het apparaat, 0 zal polling uitschakelen. Dit is een terugval voor lage/stabiele belastingen die nooit genoeg variëren om een spontane rapportage te veroorzaken.\nBereik: 0 - 7200.\nStandaard waarde: 600 seconden."
     }
   },
   {

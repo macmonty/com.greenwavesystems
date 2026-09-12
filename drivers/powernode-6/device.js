@@ -58,8 +58,6 @@ class GreenwaveDevice extends ZwaveDevice {
         },
         getOpts: {
           getOnStart: false,
-          pollInterval: 'poll_interval_measure',
-          pollMultiplication: 1000,
         },
       });
 
@@ -72,6 +70,15 @@ class GreenwaveDevice extends ZwaveDevice {
         this._getCapabilityValue('measure_power', 'METER')
           .catch(err => this.log(`Socket ${myMcId} startup GET:`, err.message));
       }, startupDelay);
+
+      // Periodic fallback poll for measure_power, staggered per socket so all 6
+      // don't fire together. Needed because with a low "power change for update"
+      // threshold, low/steady loads (~1-2W) may never vary enough to trigger a
+      // spontaneous METER_REPORT, so the "poll on change" mechanism above never
+      // fires for them. Handled manually (not via the library's getOpts.pollInterval)
+      // so the stagger sticks even as the recurring poll reschedules itself.
+      this._myMcId = myMcId;
+      this._scheduleMeasurePowerPoll();
 
       this.registerCapability('meter_power', 'METER', {
         getOpts: {
@@ -123,10 +130,34 @@ class GreenwaveDevice extends ZwaveDevice {
     return super._getCapabilityValue(capabilityId, commandClassId);
   }
 
+  // Fallback poll for measure_power on sub-devices, since the "poll on change"
+  // mechanism depends on a spontaneous METER_REPORT that low/steady loads may
+  // never trigger. Staggers each socket by (mcId-1)*300ms — baked into the
+  // recurring interval itself, so sockets stay out of phase across restarts too.
+  _scheduleMeasurePowerPoll() {
+    if (this._measurePollTimeout) this.homey.clearTimeout(this._measurePollTimeout);
+    const seconds = Number(this.getSetting('poll_interval_measure')) || 0;
+    if (seconds <= 0) return;
+    const intervalMs = seconds * 1000 + (this._myMcId - 1) * 300;
+    this._measurePollTimeout = this.homey.setTimeout(() => {
+      this._getCapabilityValue('measure_power', 'METER')
+        .catch(err => this.log(`Socket ${this._myMcId} periodic measure_power GET:`, err.message))
+        .finally(() => this._scheduleMeasurePowerPoll());
+    }, intervalMs);
+  }
+
+  async onSettings(args) {
+    const result = await super.onSettings(args);
+    if (this.hasCapability('measure_power') && args.changedKeys.includes('poll_interval_measure')) {
+      this._scheduleMeasurePowerPoll();
+    }
+    return result;
+  }
+
   async _migrateSettings() {
     const current = this.getSettings();
     const desired = {
-      poll_interval_measure: 0,
+      poll_interval_measure: 600,
       poll_interval_onoff: 0,
       poll_interval_meter: 300,
     };

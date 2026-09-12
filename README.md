@@ -24,6 +24,16 @@ homey app install
 
 ## Changelog:
 
+### v1.1.4
+**Fix — measure_power not updating for low/steady loads (PowerNode 6):**
+
+- The "poll on change" mechanism only reacts to a spontaneous `METER_REPORT`, which
+  the device only sends when consumption varies past a threshold (20%). Steady loads
+  of 1-2W could stay stuck without ever updating.
+- "Power change for update" default lowered from 20% to 10% (factory default).
+- `poll_interval_measure` default changed from disabled (0s) to a 600s fallback
+  poll, staggered per socket to avoid simultaneous bursts.
+
 ### v1.1.3
 **Improvement — Z-Wave traffic reduction (PowerNode 6):**
 
