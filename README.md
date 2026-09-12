@@ -33,6 +33,8 @@ homey app install
 - "Power change for update" default lowered from 20% to 10% (factory default).
 - `poll_interval_measure` default changed from disabled (0s) to a 600s fallback
   poll, staggered per socket to avoid simultaneous bursts.
+- The existing `meter_power` (kWh) poll had the same un-staggered issue — now
+  uses the same per-socket staggered scheduling.
 
 ### v1.1.3
 **Improvement — Z-Wave traffic reduction (PowerNode 6):**

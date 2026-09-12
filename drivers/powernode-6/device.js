@@ -71,22 +71,22 @@ class GreenwaveDevice extends ZwaveDevice {
           .catch(err => this.log(`Socket ${myMcId} startup GET:`, err.message));
       }, startupDelay);
 
-      // Periodic fallback poll for measure_power, staggered per socket so all 6
-      // don't fire together. Needed because with a low "power change for update"
-      // threshold, low/steady loads (~1-2W) may never vary enough to trigger a
-      // spontaneous METER_REPORT, so the "poll on change" mechanism above never
-      // fires for them. Handled manually (not via the library's getOpts.pollInterval)
-      // so the stagger sticks even as the recurring poll reschedules itself.
-      this._myMcId = myMcId;
-      this._scheduleMeasurePowerPoll();
-
       this.registerCapability('meter_power', 'METER', {
         getOpts: {
           getOnStart: false,
-          pollInterval: 'poll_interval_meter',
-          pollMultiplication: 1000,
         },
       });
+
+      // Periodic polls for measure_power and meter_power, staggered per socket
+      // (300ms apart, baked into each socket's own recurring interval) instead of
+      // the library's shared pollInterval timer — avoids all 6 sockets polling in
+      // the same instant, which this congestion-prone firmware chokes on.
+      // measure_power's poll is also a fallback for low/steady loads (~1-2W) that
+      // may never vary enough to trigger a spontaneous METER_REPORT, so the
+      // "poll on change" mechanism above never fires for them.
+      this._myMcId = myMcId;
+      this._schedulePoll('measure_power', 'poll_interval_measure');
+      this._schedulePoll('meter_power', 'poll_interval_meter');
     }
 
     this.registerCapability('onoff', 'SWITCH_BINARY', {
@@ -130,26 +130,28 @@ class GreenwaveDevice extends ZwaveDevice {
     return super._getCapabilityValue(capabilityId, commandClassId);
   }
 
-  // Fallback poll for measure_power on sub-devices, since the "poll on change"
-  // mechanism depends on a spontaneous METER_REPORT that low/steady loads may
-  // never trigger. Staggers each socket by (mcId-1)*300ms — baked into the
-  // recurring interval itself, so sockets stay out of phase across restarts too.
-  _scheduleMeasurePowerPoll() {
-    if (this._measurePollTimeout) this.homey.clearTimeout(this._measurePollTimeout);
-    const seconds = Number(this.getSetting('poll_interval_measure')) || 0;
+  // Periodic poll for a METER-based capability on sub-devices, staggered by
+  // (mcId-1)*300ms — baked into the recurring interval itself, so sockets stay
+  // out of phase across restarts too. Used instead of the library's shared
+  // getOpts.pollInterval so 6 sockets can't end up polling in the same instant.
+  _schedulePoll(capabilityId, settingKey) {
+    this._customPollTimeouts = this._customPollTimeouts || {};
+    if (this._customPollTimeouts[capabilityId]) this.homey.clearTimeout(this._customPollTimeouts[capabilityId]);
+    const seconds = Number(this.getSetting(settingKey)) || 0;
     if (seconds <= 0) return;
     const intervalMs = seconds * 1000 + (this._myMcId - 1) * 300;
-    this._measurePollTimeout = this.homey.setTimeout(() => {
-      this._getCapabilityValue('measure_power', 'METER')
-        .catch(err => this.log(`Socket ${this._myMcId} periodic measure_power GET:`, err.message))
-        .finally(() => this._scheduleMeasurePowerPoll());
+    this._customPollTimeouts[capabilityId] = this.homey.setTimeout(() => {
+      this._getCapabilityValue(capabilityId, 'METER')
+        .catch(err => this.log(`Socket ${this._myMcId} periodic ${capabilityId} GET:`, err.message))
+        .finally(() => this._schedulePoll(capabilityId, settingKey));
     }, intervalMs);
   }
 
   async onSettings(args) {
     const result = await super.onSettings(args);
-    if (this.hasCapability('measure_power') && args.changedKeys.includes('poll_interval_measure')) {
-      this._scheduleMeasurePowerPoll();
+    if (this.hasCapability('measure_power')) {
+      if (args.changedKeys.includes('poll_interval_measure')) this._schedulePoll('measure_power', 'poll_interval_measure');
+      if (args.changedKeys.includes('poll_interval_meter')) this._schedulePoll('meter_power', 'poll_interval_meter');
     }
     return result;
   }

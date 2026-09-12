@@ -28,6 +28,9 @@ either — these sockets could stay stuck showing a stale/0W reading indefinitel
    directly — avoids recreating the simultaneous-burst problem that motivated
    disabling polling in the first place. Reacts live if the user changes the
    interval in the device settings.
+4. The existing `meter_power` (kWh) poll had the same un-staggered issue — all 6
+   sockets polling every 300s in the same instant. Switched to the same manual
+   staggered scheduling as `measure_power`.
 
 ---
 
