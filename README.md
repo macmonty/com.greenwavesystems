@@ -24,6 +24,17 @@ homey app install
 
 ## Changelog:
 
+### v1.1.5
+**Improvement — rate-limit poll-on-change refresh (PowerNode 6):**
+
+- Live comparison against zwave-js/Home Assistant on the same hardware showed
+  this PowerNode sends spontaneous reports every ~8-30s almost continuously,
+  which was generating steady-state Z-Wave traffic proportional to that
+  chatter rather than only reacting to real changes.
+- Added a 15s minimum interval between refresh cycles, with a trailing refresh
+  for reports that arrive during the cooldown — cuts steady-state traffic
+  without adding meaningful latency to genuine changes.
+
 ### v1.1.4
 **Fix — measure_power not updating for low/steady loads (PowerNode 6):**
 

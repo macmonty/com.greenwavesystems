@@ -2,6 +2,28 @@
 
 ---
 
+## v1.1.5 (2026-09-13)
+
+### Rate-limit poll-on-change refresh (PowerNode 6)
+
+#### Problem
+A live comparison against zwave-js/Home Assistant on the same hardware showed
+that this GreenWave PowerNode sends spontaneous `METER_REPORT`s roughly every
+8-30 seconds, almost continuously — not just when a real, large consumption
+change happens. Since the "poll on change" mechanism refreshes every ON socket
+on every one of these reports, it was generating steady-state Z-Wave traffic
+proportional to that chatter rate (up to ~12-16 commands/minute with several
+sockets on) rather than only reacting to genuine changes.
+
+#### Solution
+Added a 15-second minimum interval between refresh cycles. A report arriving
+during that cooldown schedules a single trailing refresh for when it ends
+(instead of being dropped), so a real change is still picked up — just never
+more than once per 15s, cutting steady-state traffic roughly in half to a
+third without adding meaningful latency.
+
+---
+
 ## v1.1.4 (2026-09-12)
 
 ### Fix — measure_power not updating for low/steady loads (PowerNode 6)

@@ -1,4 +1,8 @@
 {
+  "1.1.5": {
+    "en": "Improvement: rate-limited the poll-on-change refresh to at most once every 15s (with a trailing refresh so real changes are still caught). A live comparison against zwave-js/Home Assistant showed this PowerNode chatters every ~8-30s almost continuously, which was generating steady-state Z-Wave traffic proportional to that chatter.",
+    "nl": "Verbetering: de poll-on-change refresh is nu beperkt tot maximaal één keer per 15s (met een navolgende refresh zodat echte wijzigingen nog steeds worden opgemerkt). Een live vergelijking met zwave-js/Home Assistant liet zien dat deze PowerNode bijna continu elke ~8-30s \"praat\", wat evenredig Z-Wave verkeer veroorzaakte."
+  },
   "1.1.4": {
     "en": "Fix: measure_power could get stuck on low/steady loads (~1-2W) that never crossed the report threshold. Lowered the threshold to 10% and added a staggered 600s fallback poll on top of the existing poll-on-change mechanism. Also fixed the meter_power (kWh) poll and the turn-on measure_power GET to stagger across sockets instead of firing/queueing together, and already-paired sockets now get the new 10% threshold pushed to them automatically without removing/re-adding the strip.",
     "nl": "Fix: measure_power kon vastlopen bij lage/stabiele belastingen (~1-2W) die de rapportagedrempel nooit overschreden. Drempel verlaagd naar 10% en een gespreide 600s terugvalpolling toegevoegd bovenop het bestaande poll-on-change mechanisme. Ook de meter_power (kWh) polling en de meting-bij-inschakelen zijn gespreid over de stopcontacten in plaats van tegelijk te vuren/in de wachtrij te komen, en reeds gekoppelde stopcontacten krijgen de nieuwe 10% drempel nu automatisch doorgestuurd zonder de strip te hoeven verwijderen/opnieuw toe te voegen."

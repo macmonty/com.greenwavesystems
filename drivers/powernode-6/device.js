@@ -30,23 +30,7 @@ class GreenwaveDevice extends ZwaveDevice {
         if (this._refreshDebounce) this.homey.clearTimeout(this._refreshDebounce);
         this._refreshDebounce = this.homey.setTimeout(() => {
           this._refreshDebounce = null;
-          // Only refresh sockets of THIS physical strip (same pairing token) that are
-          // ON — sockets on other PowerNode-6 strips paired to the same Homey are
-          // untouched, and OFF sockets already show 0W and need no GET.
-          const subDevices = this.driver.getDevices().filter(d => d !== this
-            && d.hasCapability('measure_power')
-            && d.getData().token === rootToken
-            && d.getCapabilityValue('onoff') !== false);
-          this.log(`Power change — refreshing ${subDevices.length} ON sockets`);
-          // Stagger the GETs (150ms apart) instead of firing them all at once —
-          // this GreenWave firmware is known to choke on bursts of near-simultaneous
-          // commands (see the Param 3 startup delay fix).
-          subDevices.forEach((subDevice, i) => {
-            this.homey.setTimeout(() => {
-              subDevice._getCapabilityValue('measure_power', 'METER')
-                .catch(err => this.log(`Socket refresh error: ${err.message}`));
-            }, i * 150);
-          });
+          this._throttledRefresh(rootToken);
         }, 50);
       });
     } else {
@@ -122,6 +106,49 @@ class GreenwaveDevice extends ZwaveDevice {
         pollInterval: 'poll_interval_onoff',
         pollMultiplication: 1000,
       },
+    });
+  }
+
+  // Rate-limits poll-on-change refreshes: this GreenWave firmware sends
+  // spontaneous METER_REPORTs every ~8-30s more or less continuously (not just
+  // on real large changes), so without a floor this refreshes on almost every
+  // one of those, adding up to a lot of steady-state Z-Wave traffic. At most
+  // one refresh cycle runs per REFRESH_MIN_INTERVAL_MS; a report arriving
+  // during the cooldown schedules a single trailing refresh for when it ends,
+  // so a real change is never delayed by more than the cooldown itself.
+  _throttledRefresh(rootToken) {
+    const REFRESH_MIN_INTERVAL_MS = 15000;
+    const elapsed = Date.now() - (this._lastRefreshAt || 0);
+    if (elapsed < REFRESH_MIN_INTERVAL_MS) {
+      if (!this._refreshCooldown) {
+        this._refreshCooldown = this.homey.setTimeout(() => {
+          this._refreshCooldown = null;
+          this._refreshSockets(rootToken);
+        }, REFRESH_MIN_INTERVAL_MS - elapsed);
+      }
+      return;
+    }
+    this._refreshSockets(rootToken);
+  }
+
+  // Only refreshes sockets of THIS physical strip (same pairing token) that
+  // are ON — sockets on other PowerNode-6 strips paired to the same Homey are
+  // untouched, and OFF sockets already show 0W and need no GET. Stagger the
+  // GETs (150ms apart) instead of firing them all at once — this GreenWave
+  // firmware is known to choke on bursts of near-simultaneous commands (see
+  // the Param 3 startup delay fix).
+  _refreshSockets(rootToken) {
+    this._lastRefreshAt = Date.now();
+    const subDevices = this.driver.getDevices().filter(d => d !== this
+      && d.hasCapability('measure_power')
+      && d.getData().token === rootToken
+      && d.getCapabilityValue('onoff') !== false);
+    this.log(`Power change — refreshing ${subDevices.length} ON sockets`);
+    subDevices.forEach((subDevice, i) => {
+      this.homey.setTimeout(() => {
+        subDevice._getCapabilityValue('measure_power', 'METER')
+          .catch(err => this.log(`Socket refresh error: ${err.message}`));
+      }, i * 150);
     });
   }
 
