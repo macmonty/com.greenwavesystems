@@ -92,10 +92,9 @@ class GreenwaveDevice extends ZwaveDevice {
               // sockets within a short window queues their SET/GET commands to the
               // same physical node, so a fixed 500ms for everyone can land behind
               // another socket's pending command and take several seconds instead.
-              const mcId = Number(this.getData().multiChannelNodeId);
               this.homey.setTimeout(() => {
                 this._getMeasurePowerOnTurnOn();
-              }, 500 + (mcId - 1) * 300);
+              }, 500 + (this._myMcId - 1) * 300);
             }
           }
         },
@@ -113,9 +112,12 @@ class GreenwaveDevice extends ZwaveDevice {
   // attempt fail with NO_ACK. Retries a couple of times a few seconds apart —
   // by then the transient noise has usually settled. If all attempts fail,
   // poll-on-change or the periodic fallback poll will still catch it later.
+  // The retry delay is staggered by (mcId-1)*300ms too — if several sockets
+  // are turned on together and all fail (e.g. one noisy load affecting all of
+  // them), their retries stay spread out instead of drifting into each other.
   _getMeasurePowerOnTurnOn(attempt = 0) {
     const MAX_RETRIES = 2;
-    const RETRY_DELAY_MS = 3000;
+    const RETRY_DELAY_MS = 3000 + (this._myMcId - 1) * 300;
     this._getCapabilityValue('measure_power', 'METER')
       .catch(err => {
         this.log(`measure_power get on turn on (attempt ${attempt + 1}):`, err.message);
