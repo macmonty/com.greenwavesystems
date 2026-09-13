@@ -2,29 +2,7 @@
 
 ---
 
-## v1.1.5 (2026-09-13)
-
-### Rate-limit poll-on-change refresh (PowerNode 6)
-
-#### Problem
-A live comparison against zwave-js/Home Assistant on the same hardware showed
-that this GreenWave PowerNode sends spontaneous `METER_REPORT`s roughly every
-8-30 seconds, almost continuously — not just when a real, large consumption
-change happens. Since the "poll on change" mechanism refreshes every ON socket
-on every one of these reports, it was generating steady-state Z-Wave traffic
-proportional to that chatter rate (up to ~12-16 commands/minute with several
-sockets on) rather than only reacting to genuine changes.
-
-#### Solution
-Added a 15-second minimum interval between refresh cycles. A report arriving
-during that cooldown schedules a single trailing refresh for when it ends
-(instead of being dropped), so a real change is still picked up — just never
-more than once per 15s, cutting steady-state traffic roughly in half to a
-third without adding meaningful latency.
-
----
-
-## v1.1.4 (2026-09-12)
+## v1.1.4 (2026-09-13)
 
 ### Fix — measure_power not updating for low/steady loads (PowerNode 6)
 
@@ -65,6 +43,14 @@ either — these sockets could stay stuck showing a stale/0W reading indefinitel
    window queues their SET/GET commands to the same physical node, so a GET
    could land behind another socket's pending command and take several seconds
    instead of ~500ms. Staggered by socket (500ms + (mcId-1)*300ms).
+7. A live comparison against zwave-js/Home Assistant on the same hardware
+   showed this PowerNode sends spontaneous `METER_REPORT`s roughly every
+   8-30 seconds, almost continuously — not just on real large changes. Since
+   "poll on change" refreshed on every one of these, it generated steady-state
+   traffic proportional to that chatter (~12-16 commands/minute with several
+   sockets on). Added a 15-second minimum interval between refresh cycles,
+   with a trailing refresh for reports arriving during the cooldown so a real
+   change is still caught.
 
 ---
 
