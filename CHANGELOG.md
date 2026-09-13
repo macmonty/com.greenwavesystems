@@ -70,6 +70,31 @@ either — these sockets could stay stuck showing a stale/0W reading indefinitel
 > get a cleaner isolation test and to gather data on whether the fallback
 > poll intervals (600s / 300s) can be safely reduced.
 
+> **Note (2026-09-13) — zwave-js server log analysis**: A raw zwave-js server
+> log from the Home Assistant side (same PowerNode hardware) was reviewed
+> directly and gives two concrete data points:
+> 1. **Confirms zero polling in steady state**: after one manual "Refresh"
+>    (which queries all 6 endpoints' Meter values at once via `refreshCCValues`,
+>    taking ~3.2s), the following ~12 minutes of log contain *only* spontaneous
+>    `Value updated` lines — no further queries at all. Every power update
+>    genuinely came from the socket itself, unprompted.
+> 2. **Corrects an earlier assumption**: this session's log also shows
+>    `[Node 004] The node did not respond after 3 attempts, it is presumed
+>    dead` followed by a `ZW0204` (no ACK) error and a recovery ~1.3s later —
+>    i.e. zwave-js/Home Assistant experienced the *same class* of
+>    communication failure seen on Homey, not something Homey-specific. This
+>    supports treating the NO_ACK issue as environmental/RF, affecting any
+>    Z-Wave controller under the same conditions, rather than a Homey platform
+>    weakness — previously stated as a reasoned guess, now backed by a log.
+>
+> Important distinction this clarifies: the frequent spontaneous reports mean
+> Homey's periodic **fallback poll (600s/300s) is a plausible candidate to
+> reduce or drop**, since the device seems to "talk" often enough on its own
+> regardless of load size. The **poll-on-change GET itself cannot be
+> dropped**, though — that GET's purpose isn't frequency, it's finding out
+> *which* socket actually changed, since (unlike zwave-js) Homey has no
+> reliable way to read the correct endpoint off the report itself.
+
 ---
 
 ## v1.1.3 (2026-09-03)
