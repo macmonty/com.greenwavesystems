@@ -10,16 +10,16 @@
 The "poll on change" mechanism (v1.1.2/v1.1.3) only refreshes a socket's
 `measure_power` in reaction to a spontaneous `METER_REPORT` from the device. That
 report is only sent when consumption varies more than the "Power change for
-update" threshold — 20% by default. With a low, steady load (~1-2W), a 20%
+update" threshold. With a low, steady load (~1-2W), even a small percentage
 variation is a fraction of a watt: the device may never cross that threshold, no
 report is ever sent, and the refresh mechanism never fires. With
 `poll_interval_measure` forced to 0 (disabled), there was no periodic fallback
 either — these sockets could stay stuck showing a stale/0W reading indefinitely.
 
 #### Solution
-1. `defaultConfiguration` Param 0 lowered from 20% to **10%** (the device's
-   documented factory default, per zwave-js's config for this hardware), so
-   smaller load changes are more likely to cross the threshold on their own.
+1. `defaultConfiguration` Param 0 lowered to **10%** (the device's documented
+   factory default, per zwave-js's config for this hardware), so smaller load
+   changes are more likely to cross the threshold on their own.
 2. `poll_interval_measure` default changed from `0` (disabled) to **600 seconds**
    as a safety-net fallback poll, on top of (not replacing) the event-driven
    "poll on change" mechanism, which still gives fast reaction to larger changes.
@@ -32,7 +32,7 @@ either — these sockets could stay stuck showing a stale/0W reading indefinitel
    sockets polling every 300s in the same instant. Switched to the same manual
    staggered scheduling as `measure_power`.
 5. **`defaultConfiguration` only applies at pairing time** — sockets paired before
-   this fix would otherwise stay stuck on their old threshold (20%/80%) forever,
+   this fix would otherwise stay stuck on their old threshold (80%) forever,
    since `zwave_0`/`zwave_1`/`zwave_3` settings had no `zwave: {index, size}`
    metadata, so changing them in the Homey UI silently did nothing to the
    hardware. Added that metadata to `zwave_0` (Power change for update), and a
@@ -122,8 +122,8 @@ A **"poll on change"** mechanism was implemented in the root device:
 
 #### Additional changes
 - `getOnStart: true` on `measure_power` — power values are read on app startup for all sockets.
-- `defaultConfiguration` Param 0 corrected from 80% to **20%** — device reports on 20%
-  current variation by default when paired.
+- `defaultConfiguration` Param 0 lowered from the stale 80% (later corrected
+  further to the documented factory default, 10%, in v1.1.4).
 - `reportParser` added to sub-devices: forces 0W when socket is turned off, preventing
   transient values appearing after switching off.
 - On turn-on: active `METER_GET` triggered after 1 second so power reading appears
@@ -163,8 +163,9 @@ Apply these values in **Device settings → each socket (S1–S6)** in Homey:
 | **Poll interval meter (kWh)** | **300 s** | Energy accumulator polling every 5 minutes. Recommended to keep the kWh counter up to date. |
 
 > **Note**: The "Power change for update" parameter is sent to the Z-Wave device via
-> `CONFIGURATION_SET`. If the current value is 80% or 20% (old defaults), change it
-> manually to 10% in each socket's settings in Homey.
+> `CONFIGURATION_SET`. If the current value is not 10%, change it manually in each
+> socket's settings in Homey (already-paired sockets get this pushed automatically
+> since v1.1.4 — see above).
 
 > **Note (2026-09-13)**: "Keep alive time" (Param 1) was double-checked against
 > zwave-js's community config for this hardware, which labels the same parameter
