@@ -95,6 +95,16 @@ either — these sockets could stay stuck showing a stale/0W reading indefinitel
 > *which* socket actually changed, since (unlike zwave-js) Homey has no
 > reliable way to read the correct endpoint off the report itself.
 
+> **Note (2026-09-13) — repeat test, same result**: Ran the same 1-6 on/off
+> sequence test a second time. Same outcome as the first: zero `NO_ACK`
+> errors, zero retries triggered, all GETs succeeded on the first attempt.
+> The environment was quiet both times, so the retry logic still hasn't been
+> exercised by a real failure. Given the reliable results across both runs,
+> **the driver was accepted as-is** at this point — the remaining open items
+> (testing retries under real interference, evaluating whether the fallback
+> poll intervals can be reduced) are optional future improvements, not
+> blockers.
+
 ---
 
 ## v1.1.3 (2026-09-03)
