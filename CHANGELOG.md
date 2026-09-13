@@ -56,7 +56,19 @@ either — these sockets could stay stuck showing a stale/0W reading indefinitel
    load like a charger, whose own startup inrush/noise causes `NO_ACK`), the
    reading stayed stale until the next poll-on-change or fallback poll. Now
    retries up to twice, 3 seconds apart, by which point the transient noise
-   has usually settled.
+   has usually settled. The retry delay is staggered by socket too (same
+   (mcId-1)*300ms offset as the initial attempt), so if several sockets are
+   turned on together and all fail, their retries stay spread out instead of
+   drifting into each other.
+
+> **Note (2026-09-13)**: Tested the turn-on retry logic by switching all 6
+> sockets on/off in sequence — no retries actually fired (first attempt
+> succeeded every time), because the environment was quiet at that moment.
+> The mechanism is deployed but not yet exercised by a real failure in
+> testing. Next planned test: repeat with light bulbs (pure resistive load,
+> no switching-mode noise) as the test load instead of USB chargers, both to
+> get a cleaner isolation test and to gather data on whether the fallback
+> poll intervals (600s / 300s) can be safely reduced.
 
 ---
 
