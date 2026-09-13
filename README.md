@@ -28,9 +28,9 @@ homey app install
 **Fix — measure_power not updating for low/steady loads (PowerNode 6):**
 
 - The "poll on change" mechanism only reacts to a spontaneous `METER_REPORT`, which
-  the device only sends when consumption varies past a threshold (20%). Steady loads
+  the device only sends when consumption varies past a threshold. Steady loads
   of 1-2W could stay stuck without ever updating.
-- "Power change for update" default lowered from 20% to 10% (factory default).
+- "Power change for update" default lowered to 10% (factory default).
 - `poll_interval_measure` default changed from disabled (0s) to a 600s fallback
   poll, staggered per socket to avoid simultaneous bursts.
 - The existing `meter_power` (kWh) poll had the same un-staggered issue — now
@@ -71,7 +71,8 @@ homey app install
   whenever a spontaneous report arrives, giving accurate per-socket readings (~1–2s latency).
 - Power reading forced to 0W immediately when a socket is turned off.
 - Active METER_GET triggered 1 second after turning on a socket for near-instant feedback.
-- Default "Power change for update" parameter corrected from 80% to 20%.
+- Default "Power change for update" parameter lowered from the stale 80%
+  (later corrected further to the factory default, 10%, in v1.1.4).
 - Power values now read on app startup (`getOnStart`).
 
 ### v1.1.1 - (re-pair of devices is needed)
