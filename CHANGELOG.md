@@ -148,6 +148,16 @@ Apply these values in **Device settings → each socket (S1–S6)** in Homey:
 > `CONFIGURATION_SET`. If the current value is 80% or 20% (old defaults), change it
 > manually to 10% in each socket's settings in Homey.
 
+> **Note (2026-09-13)**: "Keep alive time" (Param 1) was double-checked against
+> zwave-js's community config for this hardware, which labels the same parameter
+> differently ("No Communication Light", default 2) — this raised a question about
+> which description/default was correct. Independent real-world reports from other
+> Z-Wave platforms (Domoticz, Home Assistant community) confirm our description and
+> default are right: it's the number of minutes without contact from the controller
+> before the device starts flashing its LED thinking it lost the network, and users
+> on other platforms independently arrived at 255 (max) to stop that flashing —
+> exactly why this driver defaults to it. No change needed.
+
 ---
 
 ## GreenWave NP240/NP242 firmware v4.27 — known issues
