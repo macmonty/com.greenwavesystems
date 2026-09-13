@@ -94,8 +94,7 @@ class GreenwaveDevice extends ZwaveDevice {
               // another socket's pending command and take several seconds instead.
               const mcId = Number(this.getData().multiChannelNodeId);
               this.homey.setTimeout(() => {
-                this._getCapabilityValue('measure_power', 'METER')
-                  .catch(err => this.log('measure_power get on turn on:', err.message));
+                this._getMeasurePowerOnTurnOn();
               }, 500 + (mcId - 1) * 300);
             }
           }
@@ -107,6 +106,23 @@ class GreenwaveDevice extends ZwaveDevice {
         pollMultiplication: 1000,
       },
     });
+  }
+
+  // GET after turning a socket on, with retries: the connected load's own
+  // startup inrush/switching noise (chargers etc.) often makes the first
+  // attempt fail with NO_ACK. Retries a couple of times a few seconds apart —
+  // by then the transient noise has usually settled. If all attempts fail,
+  // poll-on-change or the periodic fallback poll will still catch it later.
+  _getMeasurePowerOnTurnOn(attempt = 0) {
+    const MAX_RETRIES = 2;
+    const RETRY_DELAY_MS = 3000;
+    this._getCapabilityValue('measure_power', 'METER')
+      .catch(err => {
+        this.log(`measure_power get on turn on (attempt ${attempt + 1}):`, err.message);
+        if (attempt < MAX_RETRIES) {
+          this.homey.setTimeout(() => this._getMeasurePowerOnTurnOn(attempt + 1), RETRY_DELAY_MS);
+        }
+      });
   }
 
   // Rate-limits poll-on-change refreshes: this GreenWave firmware sends

@@ -45,6 +45,9 @@ homey app install
   every ~8-30s almost continuously; added a 15s minimum interval between
   poll-on-change refresh cycles (with a trailing refresh) to cut steady-state
   traffic without losing real changes.
+- The "turn on" `measure_power` GET now retries up to twice (3s apart) instead
+  of a single attempt — the connected load's own startup noise (e.g. a
+  charger) often makes the first attempt fail with `NO_ACK`.
 
 ### v1.1.3
 **Improvement — Z-Wave traffic reduction (PowerNode 6):**

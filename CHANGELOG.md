@@ -51,6 +51,12 @@ either — these sockets could stay stuck showing a stale/0W reading indefinitel
    sockets on). Added a 15-second minimum interval between refresh cycles,
    with a trailing refresh for reports arriving during the cooldown so a real
    change is still caught.
+8. The `measure_power` GET fired after turning a socket on was a single
+   attempt — if it failed (common right after turning on a switching-mode
+   load like a charger, whose own startup inrush/noise causes `NO_ACK`), the
+   reading stayed stale until the next poll-on-change or fallback poll. Now
+   retries up to twice, 3 seconds apart, by which point the transient noise
+   has usually settled.
 
 ---
 
